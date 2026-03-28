@@ -1,10 +1,9 @@
 import { createRoute, useNavigate } from '@tanstack/react-router';
 import { Route as rootRoute } from '../__root';
 import { useCreatePost } from '@/hooks/usePosts';
-import { useMediaUpload } from '@/hooks/useMediaUpload';
 import { useState } from 'react';
 import type { PostCategory, CreatePostRequest } from '@/types';
-import { MapPin, Upload, X } from 'lucide-react';
+import { MapPin, Plus, X } from 'lucide-react';
 
 export const Route = createRoute({
   getParentRoute: () => rootRoute,
@@ -24,7 +23,6 @@ const CATEGORIES: { value: PostCategory; label: string }[] = [
 function CreatePostPage() {
   const navigate = useNavigate();
   const createPost = useCreatePost();
-  const { upload, isUploading } = useMediaUpload();
 
   const [content, setContent] = useState('');
   const [category, setCategory] = useState<PostCategory>('SPOT');
@@ -36,14 +34,13 @@ function CreatePostPage() {
   const [bestSeason, setBestSeason] = useState('');
   const [durationSuggested, setDurationSuggested] = useState('');
   const [tags, setTags] = useState('');
-  const [mediaUrls, setMediaUrls] = useState<string[]>([]);
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    for (const file of Array.from(files)) {
-      const result = await upload(file);
-      setMediaUrls((prev) => [...prev, result.mediaUrl]);
+  const addImageUrl = () => {
+    if (imageUrl.trim()) {
+      setImageUrls((prev) => [...prev, imageUrl.trim()]);
+      setImageUrl('');
     }
   };
 
@@ -61,7 +58,7 @@ function CreatePostPage() {
       bestSeason: bestSeason || undefined,
       durationSuggested: durationSuggested || undefined,
       tags: tags ? tags.split(',').map((t) => t.trim()) : undefined,
-      mediaItems: mediaUrls.map((url) => ({ mediaUrl: url })),
+      mediaItems: imageUrls.map((url) => ({ mediaUrl: url })),
     };
 
     createPost.mutate(data, {
@@ -74,29 +71,32 @@ function CreatePostPage() {
       <h1 className="text-2xl font-bold mb-6">Create Travel Card</h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Media Upload */}
+        {/* Image URLs */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Photos / Video *</label>
-          <div className="flex flex-wrap gap-3">
-            {mediaUrls.map((url, i) => (
-              <div key={i} className="relative w-24 h-24 rounded-lg overflow-hidden bg-gray-100">
-                <img src={url} alt="" className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => setMediaUrls((prev) => prev.filter((_, j) => j !== i))}
-                  className="absolute top-1 right-1 bg-black/50 rounded-full p-0.5"
-                >
-                  <X size={14} className="text-white" />
+          <label className="block text-sm font-medium text-gray-700 mb-2">Photo URLs *</label>
+          <p className="text-xs text-gray-500 mb-2">Paste image URLs (use Imgur, Unsplash, or any image host)</p>
+          <div className="flex gap-2 mb-2">
+            <input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="https://example.com/photo.jpg"
+              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+            <button type="button" onClick={addImageUrl}
+              className="px-3 py-2 bg-brand-100 text-brand-700 rounded-lg text-sm font-medium hover:bg-brand-200">
+              <Plus size={16} />
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {imageUrls.map((url, i) => (
+              <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden bg-gray-100 border">
+                <img src={url} alt="" className="w-full h-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).src = ''; }} />
+                <button type="button"
+                  onClick={() => setImageUrls((prev) => prev.filter((_, j) => j !== i))}
+                  className="absolute top-0.5 right-0.5 bg-black/50 rounded-full p-0.5">
+                  <X size={12} className="text-white" />
                 </button>
               </div>
             ))}
-            <label className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-brand-400">
-              <Upload size={20} className="text-gray-400" />
-              <span className="text-xs text-gray-400 mt-1">Add</span>
-              <input type="file" accept="image/*,video/mp4" multiple onChange={handleFileUpload} className="hidden" />
-            </label>
           </div>
-          {isUploading && <p className="text-xs text-gray-500 mt-1">Uploading...</p>}
         </div>
 
         {/* Category */}
@@ -104,16 +104,12 @@ function CreatePostPage() {
           <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((cat) => (
-              <button
-                key={cat.value}
-                type="button"
-                onClick={() => setCategory(cat.value)}
+              <button key={cat.value} type="button" onClick={() => setCategory(cat.value)}
                 className={`px-3 py-1.5 rounded-full text-sm font-medium border transition ${
                   category === cat.value
                     ? 'bg-wanderlust-primary text-white border-wanderlust-primary'
                     : 'bg-white text-gray-600 border-gray-200 hover:border-brand-300'
-                }`}
-              >
+                }`}>
                 {cat.label}
               </button>
             ))}
@@ -126,50 +122,41 @@ function CreatePostPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               <MapPin size={14} className="inline" /> Place Name *
             </label>
-            <input
-              type="text"
-              value={placeName}
-              onChange={(e) => setPlaceName(e.target.value)}
+            <input type="text" value={placeName} onChange={(e) => setPlaceName(e.target.value)}
               placeholder="e.g., Shibuya Crossing"
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
-              required
-            />
+              required />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Country Code *</label>
-            <input
-              type="text"
-              value={countryCode}
-              onChange={(e) => setCountryCode(e.target.value)}
-              placeholder="JP"
-              maxLength={3}
+            <input type="text" value={countryCode} onChange={(e) => setCountryCode(e.target.value)}
+              placeholder="JP" maxLength={3}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
-              required
-            />
+              required />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Latitude *</label>
             <input type="number" step="any" value={latitude} onChange={(e) => setLatitude(e.target.value)}
-              placeholder="35.6595" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" required />
+              placeholder="35.6595"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+              required />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Longitude *</label>
             <input type="number" step="any" value={longitude} onChange={(e) => setLongitude(e.target.value)}
-              placeholder="139.7004" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" required />
+              placeholder="139.7004"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
+              required />
           </div>
         </div>
 
         {/* Content */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Your Travel Story *</label>
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            rows={5}
-            placeholder="Share your experience — what made this place special? Tips for future travelers?"
+          <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={5}
+            placeholder="Share your experience — what made this place special?"
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
-            required
-          />
+            required />
         </div>
 
         {/* Optional Metadata */}
@@ -201,7 +188,8 @@ function CreatePostPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
             <input type="text" value={durationSuggested} onChange={(e) => setDurationSuggested(e.target.value)}
-              placeholder="e.g., 2 hours" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+              placeholder="e.g., 2 hours"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
           </div>
         </div>
 
@@ -209,14 +197,12 @@ function CreatePostPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma-separated)</label>
           <input type="text" value={tags} onChange={(e) => setTags(e.target.value)}
-            placeholder="temple, photography, sunset" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+            placeholder="temple, photography, sunset"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
         </div>
 
-        <button
-          type="submit"
-          disabled={createPost.isPending || mediaUrls.length === 0}
-          className="w-full bg-wanderlust-primary text-white py-3 rounded-lg font-medium hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        <button type="submit" disabled={createPost.isPending || imageUrls.length === 0}
+          className="w-full bg-wanderlust-primary text-white py-3 rounded-lg font-medium hover:bg-brand-800 disabled:opacity-50 disabled:cursor-not-allowed">
           {createPost.isPending ? 'Publishing...' : 'Publish Travel Card'}
         </button>
       </form>

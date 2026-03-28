@@ -14,14 +14,17 @@ import org.locationtech.jts.geom.Point;
 @Builder
 public class User extends BaseEntity {
 
-    @Column(name = "keycloak_id", nullable = false, unique = true)
-    private String keycloakId;
-
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
     @Column(name = "display_name", nullable = false, length = 100)
     private String displayName;
+
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
 
     @Column(columnDefinition = "TEXT")
     private String bio;

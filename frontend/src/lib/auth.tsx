@@ -1,82 +1,78 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import Keycloak from 'keycloak-js';
 import { api } from './api';
 import type { User } from '@/types';
-
-const keycloak = new Keycloak({
-  url: import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8180',
-  realm: import.meta.env.VITE_KEYCLOAK_REALM || 'wanderlust',
-  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'wanderlust-frontend',
-});
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: User | null;
-  login: () => void;
-  logout: () => void;
   token: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  register: (username: string, displayName: string, email: string, password: string) => Promise<void>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isLoading: true,
   user: null,
-  login: () => {},
-  logout: () => {},
   token: null,
+  login: async () => {},
+  register: async () => {},
+  logout: () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Restore session from localStorage
   useEffect(() => {
-    keycloak
-      .init({ onLoad: 'check-sso', silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html' })
-      .then(async (authenticated) => {
-        setIsAuthenticated(authenticated);
-        if (authenticated && keycloak.token) {
-          setToken(keycloak.token);
-          api.setToken(keycloak.token);
-          try {
-            const me = await api.getMe();
-            setUser(me);
-          } catch {
-            // User fetch failed, continue unauthenticated
-          }
-        }
-        setIsLoading(false);
-      })
-      .catch(() => setIsLoading(false));
-
-    // Token refresh
-    const interval = setInterval(() => {
-      if (keycloak.authenticated) {
-        keycloak.updateToken(30).then((refreshed) => {
-          if (refreshed && keycloak.token) {
-            setToken(keycloak.token);
-            api.setToken(keycloak.token);
-          }
-        });
-      }
-    }, 30000);
-
-    return () => clearInterval(interval);
+    const saved = localStorage.getItem('wanderlust_token');
+    if (saved) {
+      setToken(saved);
+      api.setToken(saved);
+      api.getMe()
+        .then(setUser)
+        .catch(() => {
+          localStorage.removeItem('wanderlust_token');
+          setToken(null);
+          api.setToken(null);
+        })
+        .finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
+    }
   }, []);
 
-  const login = useCallback(() => keycloak.login(), []);
+  const login = useCallback(async (email: string, password: string) => {
+    const res = await api.login(email, password);
+    localStorage.setItem('wanderlust_token', res.token);
+    setToken(res.token);
+    api.setToken(res.token);
+    const me = await api.getMe();
+    setUser(me);
+  }, []);
+
+  const register = useCallback(async (username: string, displayName: string, email: string, password: string) => {
+    const res = await api.register(username, displayName, email, password);
+    localStorage.setItem('wanderlust_token', res.token);
+    setToken(res.token);
+    api.setToken(res.token);
+    const me = await api.getMe();
+    setUser(me);
+  }, []);
+
   const logout = useCallback(() => {
-    keycloak.logout();
-    setUser(null);
+    localStorage.removeItem('wanderlust_token');
     setToken(null);
+    setUser(null);
     api.setToken(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, login, logout, token }}>
+    <AuthContext.Provider value={{ isAuthenticated: !!user, isLoading, user, token, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

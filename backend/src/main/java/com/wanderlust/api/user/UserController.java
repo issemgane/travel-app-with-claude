@@ -6,7 +6,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -34,9 +33,8 @@ public class UserController {
     @PutMapping("/me")
     @Operation(summary = "Update own profile")
     public ResponseEntity<UserDto> updateProfile(
-            @AuthenticationPrincipal Jwt jwt,
+            @AuthenticationPrincipal UUID userId,
             @Valid @RequestBody UpdateProfileRequest request) {
-        UUID userId = userService.resolveUserId(jwt);
         return ResponseEntity.ok(userService.updateProfile(userId, request));
     }
 

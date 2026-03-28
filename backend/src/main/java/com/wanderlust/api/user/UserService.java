@@ -2,7 +2,6 @@ package com.wanderlust.api.user;
 
 import com.wanderlust.api.common.ApiException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,34 +13,6 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final FollowRepository followRepository;
-
-    @Transactional
-    public UserDto getOrCreateFromJwt(Jwt jwt) {
-        String keycloakId = jwt.getSubject();
-        User user = userRepository.findByKeycloakId(keycloakId)
-                .orElseGet(() -> createFromJwt(jwt));
-        return UserDto.from(user);
-    }
-
-    private User createFromJwt(Jwt jwt) {
-        String preferredUsername = jwt.getClaimAsString("preferred_username");
-        String name = jwt.getClaimAsString("name");
-        if (name == null) name = preferredUsername;
-
-        // Ensure unique username
-        String username = preferredUsername;
-        int suffix = 1;
-        while (userRepository.existsByUsername(username)) {
-            username = preferredUsername + suffix++;
-        }
-
-        User user = User.builder()
-                .keycloakId(jwt.getSubject())
-                .username(username)
-                .displayName(name)
-                .build();
-        return userRepository.save(user);
-    }
 
     @Transactional(readOnly = true)
     public UserDto getById(UUID id) {
@@ -75,7 +46,6 @@ public class UserService {
         if (!userRepository.existsById(userId)) {
             throw ApiException.notFound("User", userId);
         }
-
         User user = userRepository.findById(userId).orElseThrow();
 
         return UserStatsDto.builder()
@@ -83,12 +53,5 @@ public class UserService {
                 .followingCount(followRepository.countByFollowerId(userId))
                 .countriesVisited(user.getCountriesVisitedCount())
                 .build();
-    }
-
-    public UUID resolveUserId(Jwt jwt) {
-        String keycloakId = jwt.getSubject();
-        return userRepository.findByKeycloakId(keycloakId)
-                .map(User::getId)
-                .orElseThrow(() -> ApiException.notFound("User", keycloakId));
     }
 }

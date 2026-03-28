@@ -32,6 +32,20 @@ class ApiClient {
   }
 
   // Auth
+  login(email: string, password: string) {
+    return this.request<{ token: string }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  }
+
+  register(username: string, displayName: string, email: string, password: string) {
+    return this.request<{ token: string }>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ username, displayName, email, password }),
+    });
+  }
+
   getMe() {
     return this.request<import('@/types').User>('/auth/me');
   }
@@ -177,13 +191,6 @@ class ApiClient {
     );
   }
 
-  // Media
-  getPresignedUrl(contentType: string, filename: string) {
-    return this.request<import('@/types').PresignedUrlResponse>('/media/presigned-url', {
-      method: 'POST',
-      body: JSON.stringify({ contentType, filename }),
-    });
-  }
 }
 
 export const api = new ApiClient();
