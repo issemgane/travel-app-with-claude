@@ -17,10 +17,13 @@ public class JwtService {
     private final SecretKey key;
     private final long expirationMs;
 
+    private static final String DEFAULT_SECRET = "wanderlust-default-jwt-secret-key-that-is-at-least-256-bits-long-for-hs256-algorithm";
+
     public JwtService(
-            @Value("${wanderlust.jwt.secret}") String secret,
-            @Value("${wanderlust.jwt.expiration-ms}") long expirationMs) {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+            @Value("${wanderlust.jwt.secret:}") String secret,
+            @Value("${wanderlust.jwt.expiration-ms:86400000}") long expirationMs) {
+        String effectiveSecret = (secret != null && !secret.isBlank()) ? secret : DEFAULT_SECRET;
+        this.key = Keys.hmacShaKeyFor(effectiveSecret.getBytes(StandardCharsets.UTF_8));
         this.expirationMs = expirationMs;
     }
 
