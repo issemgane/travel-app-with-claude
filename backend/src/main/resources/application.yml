@@ -1,0 +1,85 @@
+spring:
+  application:
+    name: wanderlust-api
+
+  # ── Database ────────────────────────────────────────────
+  datasource:
+    url: jdbc:postgresql://localhost:5432/wanderlust
+    username: wanderlust
+    password: wanderlust_dev
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    database-platform: org.hibernate.spatial.dialect.postgis.PostgisPG10Dialect
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: public
+
+  # ── Redis ───────────────────────────────────────────────
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+
+  # ── Security / OAuth2 ──────────────────────────────────
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/wanderlust
+          jwk-set-uri: http://localhost:8180/realms/wanderlust/protocol/openid-connect/certs
+
+  # ── Jackson ─────────────────────────────────────────────
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 50MB
+
+# ── Server ──────────────────────────────────────────────
+server:
+  port: 8080
+  error:
+    include-message: always
+
+# ── App Config ──────────────────────────────────────────
+wanderlust:
+  cors:
+    allowed-origins: http://localhost:5173
+  pagination:
+    default-page-size: 20
+    max-page-size: 100
+  feed:
+    cache-ttl-minutes: 5
+  media:
+    s3:
+      endpoint: http://localhost:9000
+      access-key: wanderlust
+      secret-key: wanderlust_dev
+      bucket: wanderlust-media
+      region: us-east-1
+    cdn-base-url: http://localhost:9000/wanderlust-media
+    max-file-size-mb: 20
+    allowed-types: image/jpeg,image/png,image/webp,video/mp4
+
+# ── Actuator ────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+# ── Logging ─────────────────────────────────────────────
+logging:
+  level:
+    com.wanderlust: DEBUG
+    org.hibernate.SQL: DEBUG

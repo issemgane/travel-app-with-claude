@@ -1,0 +1,39 @@
+# Java
+backend/target/
+*.class
+*.jar
+*.war
+
+# Maven
+.mvn/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+postgres_data/
+redis_data/
+minio_data/
+
+# Logs
+*.log
+logs/
