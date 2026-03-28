@@ -4,9 +4,6 @@ import com.wanderlust.api.common.ApiException;
 import com.wanderlust.api.user.User;
 import com.wanderlust.api.user.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,15 +17,11 @@ public class TravelPostService {
 
     private final TravelPostRepository postRepository;
     private final UserRepository userRepository;
-    private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory(new PrecisionModel(), 4326);
 
     @Transactional
     public PostDto create(UUID userId, CreatePostRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> ApiException.notFound("User", userId));
-
-        var location = GEOMETRY_FACTORY.createPoint(
-                new Coordinate(request.getLongitude(), request.getLatitude()));
 
         TravelPost post = TravelPost.builder()
                 .user(user)
@@ -38,10 +31,11 @@ public class TravelPostService {
                 .bestSeason(request.getBestSeason())
                 .durationSuggested(request.getDurationSuggested())
                 .accessibilityRating(request.getAccessibilityRating())
-                .location(location)
+                .latitude(request.getLatitude())
+                .longitude(request.getLongitude())
                 .placeName(request.getPlaceName())
                 .countryCode(request.getCountryCode().toUpperCase())
-                .tags(request.getTags() != null ? request.getTags() : new String[]{})
+                .tags(request.getTags() != null ? String.join(",", request.getTags()) : null)
                 .build();
 
         // Add media

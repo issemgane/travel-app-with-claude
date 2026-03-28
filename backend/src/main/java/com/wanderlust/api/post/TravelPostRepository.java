@@ -18,8 +18,12 @@ public interface TravelPostRepository extends JpaRepository<TravelPost, UUID> {
 
     @Query(value = """
             SELECT tp.* FROM travel_posts tp
-            WHERE ST_DWithin(tp.location, ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography, :radius)
-            ORDER BY tp.location <-> ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography
+            WHERE (6371000 * acos(cos(radians(:lat)) * cos(radians(tp.latitude))
+                * cos(radians(tp.longitude) - radians(:lng))
+                + sin(radians(:lat)) * sin(radians(tp.latitude)))) < :radius
+            ORDER BY (6371000 * acos(cos(radians(:lat)) * cos(radians(tp.latitude))
+                * cos(radians(tp.longitude) - radians(:lng))
+                + sin(radians(:lat)) * sin(radians(tp.latitude)))) ASC
             """, nativeQuery = true)
     Page<TravelPost> findNearby(
             @Param("lat") double lat,
@@ -37,21 +41,16 @@ public interface TravelPostRepository extends JpaRepository<TravelPost, UUID> {
 
     @Query(value = """
             SELECT tp.* FROM travel_posts tp
-            WHERE to_tsvector('english', COALESCE(tp.content, '') || ' ' || tp.place_name)
-                  @@ plainto_tsquery('english', :query)
-            ORDER BY ts_rank(
-                to_tsvector('english', COALESCE(tp.content, '') || ' ' || tp.place_name),
-                plainto_tsquery('english', :query)
-            ) DESC
+            WHERE LOWER(COALESCE(tp.content, '') || ' ' || tp.place_name)
+                  LIKE LOWER(CONCAT('%%', :query, '%%'))
+            ORDER BY tp.created_at DESC
             """, nativeQuery = true)
     Page<TravelPost> searchByContent(@Param("query") String query, Pageable pageable);
 
     @Query(value = """
             SELECT tp.* FROM travel_posts tp
-            WHERE ST_Within(
-                tp.location::geometry,
-                ST_MakeEnvelope(:swLng, :swLat, :neLng, :neLat, 4326)
-            )
+            WHERE tp.latitude BETWEEN :swLat AND :neLat
+            AND tp.longitude BETWEEN :swLng AND :neLng
             ORDER BY tp.likes_count DESC
             """, nativeQuery = true)
     Page<TravelPost> findWithinBounds(

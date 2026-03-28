@@ -3,7 +3,6 @@ package com.wanderlust.api.user;
 import com.wanderlust.api.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.locationtech.jts.geom.Point;
 
 @Entity
 @Table(name = "users")
@@ -40,6 +39,9 @@ public class User extends BaseEntity {
     @Builder.Default
     private Integer countriesVisitedCount = 0;
 
-    @Column(name = "current_location", columnDefinition = "geography(Point,4326)")
-    private Point currentLocation;
+    @Column(name = "current_latitude")
+    private Double currentLatitude;
+
+    @Column(name = "current_longitude")
+    private Double currentLongitude;
 }

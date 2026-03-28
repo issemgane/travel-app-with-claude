@@ -4,9 +4,6 @@ import com.wanderlust.api.common.BaseEntity;
 import com.wanderlust.api.user.User;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-import org.locationtech.jts.geom.Point;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,8 +40,11 @@ public class TravelPost extends BaseEntity {
     @Column(name = "accessibility_rating")
     private Short accessibilityRating;
 
-    @Column(nullable = false, columnDefinition = "geography(Point,4326)")
-    private Point location;
+    @Column(nullable = false)
+    private Double latitude;
+
+    @Column(nullable = false)
+    private Double longitude;
 
     @Column(name = "place_name", nullable = false)
     private String placeName;
@@ -52,10 +52,8 @@ public class TravelPost extends BaseEntity {
     @Column(name = "country_code", nullable = false, length = 3)
     private String countryCode;
 
-    @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(name = "tags", columnDefinition = "text[]")
-    @Builder.Default
-    private String[] tags = new String[]{};
+    @Column(name = "tags")
+    private String tags;
 
     @Column(name = "likes_count", nullable = false)
     @Builder.Default
