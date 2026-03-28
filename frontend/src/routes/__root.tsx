@@ -1,6 +1,6 @@
-import { createRootRoute, createRoute, createRouter, Outlet, Link } from '@tanstack/react-router';
+import { createRootRoute, Outlet, Link } from '@tanstack/react-router';
 import { useAuth } from '@/lib/auth';
-import { Compass, Home, Map, PlusSquare, User, Bookmark } from 'lucide-react';
+import { Compass, Home, PlusSquare, User, Bookmark } from 'lucide-react';
 
 // Root layout
 const rootRoute = createRootRoute({
@@ -79,7 +79,7 @@ function RootLayout() {
           <Home size={22} /><span>Feed</span>
         </Link>
         <Link to="/explore" className="flex flex-col items-center text-xs text-gray-600">
-          <Map size={22} /><span>Explore</span>
+          <Compass size={22} /><span>Explore</span>
         </Link>
         {isAuthenticated && (
           <Link to="/post/create" className="flex flex-col items-center text-xs text-gray-600">

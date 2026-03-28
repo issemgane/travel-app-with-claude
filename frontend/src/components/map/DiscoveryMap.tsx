@@ -1,31 +1,29 @@
 import { useEffect, useState, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
-import type { LatLngBounds } from 'leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import { useMapPosts } from '@/hooks/useDiscovery';
-import type { TravelPost } from '@/types';
 import { CategoryBadge } from '@/components/post/CategoryBadge';
 import { Link } from '@tanstack/react-router';
 
 function MapBoundsHandler({ onBoundsChange }: { onBoundsChange: (bounds: { swLat: number; swLng: number; neLat: number; neLng: number }) => void }) {
   const map = useMapEvents({
     moveend: () => {
-      const bounds = map.getBounds();
+      const b = map.getBounds();
       onBoundsChange({
-        swLat: bounds.getSouthWest().lat,
-        swLng: bounds.getSouthWest().lng,
-        neLat: bounds.getNorthEast().lat,
-        neLng: bounds.getNorthEast().lng,
+        swLat: b.getSouthWest().lat,
+        swLng: b.getSouthWest().lng,
+        neLat: b.getNorthEast().lat,
+        neLng: b.getNorthEast().lng,
       });
     },
   });
 
   useEffect(() => {
-    const bounds = map.getBounds();
+    const b = map.getBounds();
     onBoundsChange({
-      swLat: bounds.getSouthWest().lat,
-      swLng: bounds.getSouthWest().lng,
-      neLat: bounds.getNorthEast().lat,
-      neLng: bounds.getNorthEast().lng,
+      swLat: b.getSouthWest().lat,
+      swLng: b.getSouthWest().lng,
+      neLat: b.getNorthEast().lat,
+      neLng: b.getNorthEast().lng,
     });
   }, [map, onBoundsChange]);
 

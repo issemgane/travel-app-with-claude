@@ -2,7 +2,7 @@ import { createRoute } from '@tanstack/react-router';
 import { Route as rootRoute } from '../__root';
 import { useProfile, useUserStats } from '@/hooks/useProfile';
 import { useAuth } from '@/lib/auth';
-import { MapPin, Globe, Calendar } from 'lucide-react';
+import { Globe, Calendar } from 'lucide-react';
 
 export const Route = createRoute({
   getParentRoute: () => rootRoute,
