@@ -4,9 +4,9 @@ import { api } from './api';
 import type { User } from '@/types';
 
 const keycloak = new Keycloak({
-  url: 'http://localhost:8180',
-  realm: 'wanderlust',
-  clientId: 'wanderlust-frontend',
+  url: import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8180',
+  realm: import.meta.env.VITE_KEYCLOAK_REALM || 'wanderlust',
+  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'wanderlust-frontend',
 });
 
 interface AuthContextType {
