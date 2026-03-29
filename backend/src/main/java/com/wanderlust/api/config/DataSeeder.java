@@ -1,13 +1,12 @@
 package com.wanderlust.api.config;
 
-import com.wanderlust.api.bookmark.BookmarkRepository;
 import com.wanderlust.api.interaction.Comment;
 import com.wanderlust.api.interaction.CommentRepository;
 import com.wanderlust.api.interaction.Like;
 import com.wanderlust.api.interaction.LikeRepository;
-import com.wanderlust.api.itinerary.ItineraryRepository;
 import com.wanderlust.api.post.*;
 import com.wanderlust.api.user.*;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -27,21 +26,15 @@ public class DataSeeder implements CommandLineRunner {
     private final CommentRepository commentRepository;
     private final LikeRepository likeRepository;
     private final FollowRepository followRepository;
-    private final BookmarkRepository bookmarkRepository;
-    private final ItineraryRepository itineraryRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EntityManager entityManager;
 
     @Override
     @Transactional
     public void run(String... args) {
         log.info("Clearing database and re-seeding...");
-        commentRepository.deleteAll();
-        likeRepository.deleteAll();
-        bookmarkRepository.deleteAll();
-        followRepository.deleteAll();
-        itineraryRepository.deleteAll();
-        postRepository.deleteAll();
-        userRepository.deleteAll();
+        entityManager.createNativeQuery("TRUNCATE TABLE comments, likes, bookmarks, follows, itinerary_items, itinerary_days, itineraries, post_media, travel_posts, users CASCADE").executeUpdate();
+        entityManager.flush();
 
         log.info("Seeding database with sample data...");
 
