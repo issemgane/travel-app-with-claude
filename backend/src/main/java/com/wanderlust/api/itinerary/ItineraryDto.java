@@ -37,7 +37,7 @@ public class ItineraryDto {
                 .username(itinerary.getUser().getUsername())
                 .title(itinerary.getTitle())
                 .description(itinerary.getDescription())
-                .countryCodes(itinerary.getCountryCodes())
+                .countryCodes(itinerary.getCountryCodes() != null ? itinerary.getCountryCodes().split(",") : new String[]{})
                 .durationDays(itinerary.getDurationDays())
                 .estimatedBudgetUsd(itinerary.getEstimatedBudgetUsd())
                 .coverImageUrl(itinerary.getCoverImageUrl())

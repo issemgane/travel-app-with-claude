@@ -4,8 +4,6 @@ import com.wanderlust.api.common.BaseEntity;
 import com.wanderlust.api.user.User;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -31,10 +29,8 @@ public class Itinerary extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(name = "country_codes", columnDefinition = "text[]")
-    @Builder.Default
-    private String[] countryCodes = new String[]{};
+    @Column(name = "country_codes")
+    private String countryCodes;
 
     @Column(name = "duration_days", nullable = false)
     private Integer durationDays;

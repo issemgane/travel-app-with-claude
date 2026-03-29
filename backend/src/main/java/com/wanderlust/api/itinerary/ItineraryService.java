@@ -27,7 +27,7 @@ public class ItineraryService {
                 .user(user)
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .countryCodes(request.getCountryCodes() != null ? request.getCountryCodes() : new String[]{})
+                .countryCodes(request.getCountryCodes() != null ? String.join(",", request.getCountryCodes()) : null)
                 .durationDays(request.getDurationDays())
                 .estimatedBudgetUsd(request.getEstimatedBudgetUsd())
                 .coverImageUrl(request.getCoverImageUrl())
