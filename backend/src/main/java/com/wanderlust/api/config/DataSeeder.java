@@ -1,9 +1,11 @@
 package com.wanderlust.api.config;
 
+import com.wanderlust.api.bookmark.BookmarkRepository;
 import com.wanderlust.api.interaction.Comment;
 import com.wanderlust.api.interaction.CommentRepository;
 import com.wanderlust.api.interaction.Like;
 import com.wanderlust.api.interaction.LikeRepository;
+import com.wanderlust.api.itinerary.ItineraryRepository;
 import com.wanderlust.api.post.*;
 import com.wanderlust.api.user.*;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -24,20 +27,26 @@ public class DataSeeder implements CommandLineRunner {
     private final CommentRepository commentRepository;
     private final LikeRepository likeRepository;
     private final FollowRepository followRepository;
+    private final BookmarkRepository bookmarkRepository;
+    private final ItineraryRepository itineraryRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
+    @Transactional
     public void run(String... args) {
-        if (userRepository.count() > 0) {
-            log.info("Database already has data, skipping seed.");
-            return;
-        }
+        log.info("Clearing database and re-seeding...");
+        commentRepository.deleteAll();
+        likeRepository.deleteAll();
+        bookmarkRepository.deleteAll();
+        followRepository.deleteAll();
+        itineraryRepository.deleteAll();
+        postRepository.deleteAll();
+        userRepository.deleteAll();
 
         log.info("Seeding database with sample data...");
 
         String hashedPassword = passwordEncoder.encode("password123");
 
-        // Create users
         List<User> users = new ArrayList<>();
         Object[][] userData = {
             {"alexwanderer", "Alex Thompson", "alex@wanderlust.com", TravelStyle.BACKPACKER, 27, "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150"},
@@ -64,7 +73,6 @@ public class DataSeeder implements CommandLineRunner {
             users.add(userRepository.save(user));
         }
 
-        // Create follows (everyone follows a few others)
         Random rng = new Random(42);
         for (User follower : users) {
             List<User> others = new ArrayList<>(users);
@@ -79,7 +87,6 @@ public class DataSeeder implements CommandLineRunner {
             }
         }
 
-        // Create posts
         List<TravelPost> posts = new ArrayList<>();
         Object[][] postData = {
             {0, "Just arrived at Santorini and the sunset views from Oia are absolutely breathtaking! The blue domes against the golden sky is something everyone needs to experience at least once.", PostCategory.SPOT, (short)4, "SUMMER", "5-7 days", 36.4618, 25.3753, "Santorini, Oia", "GR", "sunset,greece,islands", "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800"},
@@ -144,7 +151,6 @@ public class DataSeeder implements CommandLineRunner {
             posts.add(postRepository.save(post));
         }
 
-        // Add comments
         String[][] comments = {
             {"This is absolutely stunning! Adding to my bucket list.", "How long did you stay here?"},
             {"Incredible photo! What camera did you use?", "I was here last year, it's even better in person!"},
@@ -173,7 +179,6 @@ public class DataSeeder implements CommandLineRunner {
             postRepository.save(post);
         }
 
-        // Add likes
         for (TravelPost post : posts) {
             Set<UUID> likedBy = new HashSet<>();
             int numLikes = post.getLikesCount();
