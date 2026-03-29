@@ -34,7 +34,6 @@ public class ItineraryService {
                 .isPublished(request.getIsPublished() != null && request.getIsPublished())
                 .build();
 
-        // Create empty days
         for (int i = 1; i <= request.getDurationDays(); i++) {
             ItineraryDay day = ItineraryDay.builder()
                     .itinerary(itinerary)
@@ -83,7 +82,6 @@ public class ItineraryService {
                 .clonedFrom(original.getId())
                 .build();
 
-        // Deep copy days and items
         for (ItineraryDay originalDay : original.getDays()) {
             ItineraryDay clonedDay = ItineraryDay.builder()
                     .itinerary(cloned)
