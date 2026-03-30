@@ -20,11 +20,13 @@ function RootLayout() {
 
         <div className="hidden md:flex items-center gap-6">
           <Link to="/" className="text-gray-600 hover:text-wanderlust-primary flex items-center gap-1">
-            <Home size={20} /> Feed
-          </Link>
-          <Link to="/explore" className="text-gray-600 hover:text-wanderlust-primary flex items-center gap-1">
             <Compass size={20} /> Explore
           </Link>
+          {isAuthenticated && (
+            <Link to="/feed" className="text-gray-600 hover:text-wanderlust-primary flex items-center gap-1">
+              <Home size={20} /> Feed
+            </Link>
+          )}
           {isAuthenticated && (
             <>
               <Link to="/post/create" className="text-gray-600 hover:text-wanderlust-primary flex items-center gap-1">
@@ -76,11 +78,13 @@ function RootLayout() {
       {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2 z-50">
         <Link to="/" className="flex flex-col items-center text-xs text-gray-600">
-          <Home size={22} /><span>Feed</span>
-        </Link>
-        <Link to="/explore" className="flex flex-col items-center text-xs text-gray-600">
           <Compass size={22} /><span>Explore</span>
         </Link>
+        {isAuthenticated && (
+          <Link to="/feed" className="flex flex-col items-center text-xs text-gray-600">
+            <Home size={22} /><span>Feed</span>
+          </Link>
+        )}
         {isAuthenticated && (
           <Link to="/post/create" className="flex flex-col items-center text-xs text-gray-600">
             <PlusSquare size={22} /><span>Create</span>

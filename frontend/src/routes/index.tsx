@@ -6,7 +6,7 @@ import { useCallback, useRef, useEffect } from 'react';
 
 export const Route = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/',
+  path: '/feed',
   component: FeedPage,
 });
 
