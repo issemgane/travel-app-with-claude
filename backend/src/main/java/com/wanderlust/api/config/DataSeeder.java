@@ -34,6 +34,7 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) {
         log.info("Clearing database and re-seeding...");
         entityManager.createNativeQuery("TRUNCATE TABLE comments, likes, bookmarks, follows, itinerary_items, itinerary_days, itineraries, post_media, travel_posts, users CASCADE").executeUpdate();
+        entityManager.createNativeQuery("ALTER TABLE post_media ALTER COLUMN media_url TYPE TEXT").executeUpdate();
         entityManager.flush();
 
         log.info("Seeding database with sample data...");

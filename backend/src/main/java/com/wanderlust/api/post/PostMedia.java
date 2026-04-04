@@ -17,7 +17,7 @@ public class PostMedia extends BaseEntity {
     @JoinColumn(name = "post_id", nullable = false)
     private TravelPost post;
 
-    @Column(name = "media_url", nullable = false, length = 500)
+    @Column(name = "media_url", nullable = false, columnDefinition = "TEXT")
     private String mediaUrl;
 
     @Enumerated(EnumType.STRING)

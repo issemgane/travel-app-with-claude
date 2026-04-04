@@ -1,10 +1,10 @@
 import { createRoute, useNavigate } from '@tanstack/react-router';
 import { Route as rootRoute } from '../__root';
 import { useCreatePost } from '@/hooks/usePosts';
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { PostCategory, CreatePostRequest } from '@/types';
 import { MapPin, X, Camera, ArrowRight, ArrowLeft, ImagePlus, Hash } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -59,9 +59,42 @@ const COUNTRIES = [
   { code: 'PF', name: 'French Polynesia' },
 ];
 
-function MapPicker({ position, onPositionChange }: {
+// Approximate center coordinates for countries
+const COUNTRY_COORDS: Record<string, [number, number]> = {
+  AF: [33.93, 67.71], AL: [41.15, 20.17], DZ: [28.03, 1.66], AR: [-38.42, -63.62],
+  AU: [-25.27, 133.78], AT: [47.52, 14.55], BE: [50.50, 4.47], BR: [-14.24, -51.93],
+  BG: [42.73, 25.49], KH: [12.57, 104.99], CA: [56.13, -106.35], CL: [-35.68, -71.54],
+  CN: [35.86, 104.20], CO: [4.57, -74.30], HR: [45.10, 15.20], CU: [21.52, -77.78],
+  CZ: [49.82, 15.47], DK: [56.26, 9.50], EC: [-1.83, -78.18], EG: [26.82, 30.80],
+  FI: [61.92, 25.75], FR: [46.23, 2.21], GE: [42.32, 43.36], DE: [51.17, 10.45],
+  GR: [39.07, 21.82], HU: [47.16, 19.50], IS: [64.96, -19.02], IN: [20.59, 78.96],
+  ID: [-0.79, 113.92], IR: [32.43, 53.69], IE: [53.14, -7.69], IL: [31.05, 34.85],
+  IT: [41.87, 12.57], JP: [36.20, 138.25], JO: [30.59, 36.24], KE: [-0.02, 37.91],
+  KR: [35.91, 127.77], LB: [33.85, 35.86], MY: [4.21, 101.98], MV: [3.20, 73.22],
+  MX: [23.63, -102.55], MA: [31.79, -7.09], MM: [21.91, 95.96], NP: [28.39, 84.12],
+  NL: [52.13, 5.29], NZ: [-40.90, 174.89], NO: [60.47, 8.47], OM: [21.47, 55.98],
+  PE: [-9.19, -75.02], PH: [12.88, 121.77], PL: [51.92, 19.15], PT: [39.40, -8.22],
+  QA: [25.35, 51.18], RO: [45.94, 24.97], RU: [61.52, 105.32], SA: [23.89, 45.08],
+  SG: [1.35, 103.82], ZA: [-30.56, 22.94], ES: [40.46, -3.75], LK: [7.87, 80.77],
+  SE: [60.13, 18.64], CH: [46.82, 8.23], TW: [23.70, 120.96], TZ: [-6.37, 34.89],
+  TH: [15.87, 100.99], TR: [38.96, 35.24], AE: [23.42, 53.85], GB: [55.38, -3.44],
+  US: [37.09, -95.71], UY: [-32.52, -55.77], UZ: [41.38, 64.59], VN: [14.06, 108.28],
+  PF: [-17.68, -149.41],
+};
+
+function MapCenterUpdater({ center, zoom }: { center: [number, number]; zoom: number }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, zoom, { animate: true });
+  }, [center[0], center[1], zoom]);
+  return null;
+}
+
+function MapPicker({ position, onPositionChange, center, zoom }: {
   position: [number, number] | null;
   onPositionChange: (lat: number, lng: number) => void;
+  center: [number, number];
+  zoom: number;
 }) {
   function ClickHandler() {
     useMapEvents({
@@ -74,8 +107,8 @@ function MapPicker({ position, onPositionChange }: {
 
   return (
     <MapContainer
-      center={position ?? [30, 10]}
-      zoom={position ? 10 : 2}
+      center={center}
+      zoom={zoom}
       className="h-full w-full rounded-xl"
       style={{ minHeight: '250px' }}
     >
@@ -83,6 +116,7 @@ function MapPicker({ position, onPositionChange }: {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      <MapCenterUpdater center={center} zoom={zoom} />
       <ClickHandler />
       {position && <Marker position={position} />}
     </MapContainer>
@@ -262,24 +296,6 @@ function CreatePostPage() {
           </button>
           <h1 className="text-xl font-bold">Where was this?</h1>
 
-          {/* Map */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <MapPin size={14} className="inline mr-1" /> Tap the map to set location *
-            </label>
-            <div className="h-64 rounded-xl overflow-hidden border border-gray-200">
-              <MapPicker position={mapPosition} onPositionChange={(lat, lng) => setMapPosition([lat, lng])} />
-            </div>
-            {mapPosition && (
-              <p className="text-xs text-gray-400 mt-1">
-                {mapPosition[0].toFixed(4)}, {mapPosition[1].toFixed(4)}
-              </p>
-            )}
-            {!mapPosition && (
-              <p className="text-xs text-red-400 mt-1">Tap the map to place your pin</p>
-            )}
-          </div>
-
           {/* Country autocomplete */}
           <div className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-1">Country *</label>
@@ -310,6 +326,29 @@ function CreatePostPage() {
             <input type="text" value={cityName} onChange={e => setCityName(e.target.value)}
               placeholder="e.g., Santorini, Kyoto, Machu Picchu"
               className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
+          </div>
+
+          {/* Map - centers based on country/city selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <MapPin size={14} className="inline mr-1" /> Pinpoint the exact location *
+            </label>
+            <div className="h-64 rounded-xl overflow-hidden border border-gray-200">
+              <MapPicker
+                position={mapPosition}
+                onPositionChange={(lat, lng) => setMapPosition([lat, lng])}
+                center={mapPosition ?? (countryCode && COUNTRY_COORDS[countryCode] ? COUNTRY_COORDS[countryCode] : [30, 10])}
+                zoom={mapPosition ? 12 : countryCode ? 6 : 2}
+              />
+            </div>
+            {mapPosition && (
+              <p className="text-xs text-gray-400 mt-1">
+                {mapPosition[0].toFixed(4)}, {mapPosition[1].toFixed(4)}
+              </p>
+            )}
+            {!mapPosition && (
+              <p className="text-xs text-red-400 mt-1">Tap the map to place your pin</p>
+            )}
           </div>
 
           {/* Tags */}
