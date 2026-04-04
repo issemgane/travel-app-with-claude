@@ -9,7 +9,7 @@ import { useCallback, useRef, useEffect, useState } from 'react';
 
 export const Route = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/',
+  path: '/explore',
   component: ExplorePage,
 });
 

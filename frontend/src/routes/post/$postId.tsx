@@ -1,9 +1,10 @@
 import { createRoute } from '@tanstack/react-router';
 import { Route as rootRoute } from '../__root';
 import { usePost } from '@/hooks/usePosts';
-import { useComments, useAddComment, useQuestions } from '@/hooks/useInteractions';
+import { useComments, useAddComment, useQuestions, useToggleLike } from '@/hooks/useInteractions';
+import { useToggleBookmark } from '@/hooks/useBookmarks';
 import { CategoryBadge } from '@/components/post/CategoryBadge';
-import { Heart, MessageCircle, MapPin, Clock, DollarSign, Send } from 'lucide-react';
+import { Heart, MessageCircle, Bookmark, MapPin, Send } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
 
@@ -19,9 +20,14 @@ function PostDetailPage() {
   const { data: commentsData } = useComments(postId);
   const { data: questionsData } = useQuestions(postId);
   const addComment = useAddComment(postId);
+  const toggleLike = useToggleLike(postId);
+  const toggleBookmark = useToggleBookmark();
   const { isAuthenticated } = useAuth();
   const [commentText, setCommentText] = useState('');
   const [activeTab, setActiveTab] = useState<'comments' | 'qa'>('comments');
+  const [liked, setLiked] = useState(false);
+  const [localLikesCount, setLocalLikesCount] = useState<number | null>(null);
+  const [bookmarked, setBookmarked] = useState(false);
 
   if (isLoading || !post) {
     return (
@@ -31,8 +37,28 @@ function PostDetailPage() {
     );
   }
 
-  const comments = commentsData?.pages.flatMap((p) => p.content) ?? [];
-  const questions = questionsData?.pages.flatMap((p) => p.content) ?? [];
+  const likesCount = localLikesCount ?? post.likesCount;
+  const comments = commentsData?.pages.flatMap(p => p.content) ?? [];
+  const questions = questionsData?.pages.flatMap(p => p.content) ?? [];
+
+  const handleLike = () => {
+    if (!isAuthenticated) return;
+    const newLiked = !liked;
+    setLiked(newLiked);
+    setLocalLikesCount(newLiked ? likesCount + 1 : likesCount - 1);
+    toggleLike.mutate(undefined, {
+      onError: () => { setLiked(!newLiked); setLocalLikesCount(null); },
+    });
+  };
+
+  const handleBookmark = () => {
+    if (!isAuthenticated) return;
+    const newBookmarked = !bookmarked;
+    setBookmarked(newBookmarked);
+    toggleBookmark.mutate({ postId: post.id, isBookmarked: !newBookmarked }, {
+      onError: () => setBookmarked(!newBookmarked),
+    });
+  };
 
   const handleSubmitComment = () => {
     if (!commentText.trim()) return;
@@ -62,60 +88,48 @@ function PostDetailPage() {
         <CategoryBadge category={post.category} />
       </div>
 
-      {/* Metadata */}
-      <div className="flex items-center gap-4 text-sm text-gray-500 mb-4 flex-wrap">
-        {post.costLevel && (
-          <span className="flex items-center gap-1">
-            <DollarSign size={14} />
-            {'$'.repeat(post.costLevel)}
-          </span>
-        )}
-        {post.bestSeason && <span>Best: {post.bestSeason}</span>}
-        {post.durationSuggested && (
-          <span className="flex items-center gap-1"><Clock size={14} />{post.durationSuggested}</span>
-        )}
-      </div>
-
       {/* Content */}
       <p className="text-gray-800 mb-4 leading-relaxed">{post.content}</p>
 
       {post.tags.length > 0 && (
         <div className="flex flex-wrap gap-1 mb-4">
-          {post.tags.map((tag) => (
+          {post.tags.map(tag => (
             <span key={tag} className="text-xs text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">#{tag}</span>
           ))}
         </div>
       )}
 
-      {/* Stats */}
+      {/* Stats / Actions */}
       <div className="flex items-center gap-4 py-3 border-y border-gray-100 mb-4">
-        <button className="flex items-center gap-1 text-gray-600 hover:text-red-500">
-          <Heart size={20} /> <span>{post.likesCount} likes</span>
+        <button onClick={handleLike}
+          className={`flex items-center gap-1 transition ${liked ? 'text-red-500' : 'text-gray-600 hover:text-red-500'}`}>
+          <Heart size={20} className={liked ? 'fill-red-500' : ''} />
+          <span>{likesCount} likes</span>
         </button>
         <span className="flex items-center gap-1 text-gray-600">
           <MessageCircle size={20} /> {post.commentsCount} comments
         </span>
+        <button onClick={handleBookmark}
+          className={`ml-auto transition ${bookmarked ? 'text-wanderlust-secondary' : 'text-gray-600 hover:text-wanderlust-secondary'}`}>
+          <Bookmark size={20} className={bookmarked ? 'fill-wanderlust-secondary' : ''} />
+        </button>
       </div>
 
       {/* Comments / Q&A Tabs */}
       <div className="flex gap-4 mb-4 border-b border-gray-100">
-        <button
-          onClick={() => setActiveTab('comments')}
-          className={`pb-2 text-sm font-medium ${activeTab === 'comments' ? 'text-wanderlust-primary border-b-2 border-wanderlust-primary' : 'text-gray-500'}`}
-        >
+        <button onClick={() => setActiveTab('comments')}
+          className={`pb-2 text-sm font-medium ${activeTab === 'comments' ? 'text-wanderlust-primary border-b-2 border-wanderlust-primary' : 'text-gray-500'}`}>
           Comments ({comments.length})
         </button>
-        <button
-          onClick={() => setActiveTab('qa')}
-          className={`pb-2 text-sm font-medium ${activeTab === 'qa' ? 'text-wanderlust-primary border-b-2 border-wanderlust-primary' : 'text-gray-500'}`}
-        >
+        <button onClick={() => setActiveTab('qa')}
+          className={`pb-2 text-sm font-medium ${activeTab === 'qa' ? 'text-wanderlust-primary border-b-2 border-wanderlust-primary' : 'text-gray-500'}`}>
           Q&A ({questions.length})
         </button>
       </div>
 
       {/* Comment List */}
       <div className="space-y-3 mb-4">
-        {(activeTab === 'comments' ? comments : questions).map((comment) => (
+        {(activeTab === 'comments' ? comments : questions).map(comment => (
           <div key={comment.id} className="flex gap-3">
             <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
               <span className="text-xs font-medium text-brand-700">
@@ -139,19 +153,13 @@ function PostDetailPage() {
       {/* Add Comment */}
       {isAuthenticated && (
         <div className="flex items-center gap-2">
-          <input
-            type="text"
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
+          <input type="text" value={commentText}
+            onChange={e => setCommentText(e.target.value)}
             placeholder={activeTab === 'qa' ? 'Ask a question...' : 'Add a comment...'}
             className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
-            onKeyDown={(e) => e.key === 'Enter' && handleSubmitComment()}
-          />
-          <button
-            onClick={handleSubmitComment}
-            disabled={addComment.isPending}
-            className="p-2 text-wanderlust-primary hover:bg-brand-50 rounded-lg"
-          >
+            onKeyDown={e => e.key === 'Enter' && handleSubmitComment()} />
+          <button onClick={handleSubmitComment} disabled={addComment.isPending}
+            className="p-2 text-wanderlust-primary hover:bg-brand-50 rounded-lg">
             <Send size={18} />
           </button>
         </div>

@@ -2,7 +2,6 @@ import { createRootRoute, Outlet, Link } from '@tanstack/react-router';
 import { useAuth } from '@/lib/auth';
 import { Compass, Home, PlusSquare, User, Bookmark } from 'lucide-react';
 
-// Root layout
 const rootRoute = createRootRoute({
   component: RootLayout,
 });
@@ -20,13 +19,11 @@ function RootLayout() {
 
         <div className="hidden md:flex items-center gap-6">
           <Link to="/" className="text-gray-600 hover:text-wanderlust-primary flex items-center gap-1">
+            <Home size={20} /> Feed
+          </Link>
+          <Link to="/explore" className="text-gray-600 hover:text-wanderlust-primary flex items-center gap-1">
             <Compass size={20} /> Explore
           </Link>
-          {isAuthenticated && (
-            <Link to="/feed" className="text-gray-600 hover:text-wanderlust-primary flex items-center gap-1">
-              <Home size={20} /> Feed
-            </Link>
-          )}
           {isAuthenticated && (
             <>
               <Link to="/post/create" className="text-gray-600 hover:text-wanderlust-primary flex items-center gap-1">
@@ -43,7 +40,7 @@ function RootLayout() {
           {isAuthenticated && user ? (
             <div className="flex items-center gap-2">
               <Link to={`/profile/${user.id}`} className="flex items-center gap-2 text-sm text-gray-700 hover:text-wanderlust-primary">
-                <div className="w-8 h-8 rounded-full bg-brand-200 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-brand-200 flex items-center justify-center overflow-hidden">
                   {user.avatarUrl ? (
                     <img src={user.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
                   ) : (
@@ -58,8 +55,7 @@ function RootLayout() {
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <Link to="/auth/login"
-                className="text-sm text-gray-600 hover:text-wanderlust-primary font-medium">
+              <Link to="/auth/login" className="text-sm text-gray-600 hover:text-wanderlust-primary font-medium">
                 Sign In
               </Link>
               <Link to="/auth/register"
@@ -75,24 +71,24 @@ function RootLayout() {
         <Outlet />
       </main>
 
-      {/* Mobile Bottom Nav */}
+      {/* Mobile Bottom Nav - Order: Feed, Explore, Create, Saved */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2 z-50">
         <Link to="/" className="flex flex-col items-center text-xs text-gray-600">
+          <Home size={22} /><span>Feed</span>
+        </Link>
+        <Link to="/explore" className="flex flex-col items-center text-xs text-gray-600">
           <Compass size={22} /><span>Explore</span>
         </Link>
-        {isAuthenticated && (
-          <Link to="/feed" className="flex flex-col items-center text-xs text-gray-600">
-            <Home size={22} /><span>Feed</span>
-          </Link>
-        )}
         {isAuthenticated && (
           <Link to="/post/create" className="flex flex-col items-center text-xs text-gray-600">
             <PlusSquare size={22} /><span>Create</span>
           </Link>
         )}
-        <Link to="/bookmarks" className="flex flex-col items-center text-xs text-gray-600">
-          <Bookmark size={22} /><span>Saved</span>
-        </Link>
+        {isAuthenticated && (
+          <Link to="/bookmarks" className="flex flex-col items-center text-xs text-gray-600">
+            <Bookmark size={22} /><span>Saved</span>
+          </Link>
+        )}
         <Link to={user ? `/profile/${user.id}` : '/auth/login'} className="flex flex-col items-center text-xs text-gray-600">
           <User size={22} /><span>Profile</span>
         </Link>
@@ -101,7 +97,7 @@ function RootLayout() {
   );
 }
 
-// Import page components inline to keep it simple
+// Route imports
 import { Route as FeedRoute } from './index';
 import { Route as ExploreRoute } from './explore/index';
 import { Route as PostDetailRoute } from './post/$postId';
@@ -109,6 +105,7 @@ import { Route as CreatePostRoute } from './post/create';
 import { Route as ProfileRoute } from './profile/$userId';
 import { Route as LoginRoute } from './auth/login';
 import { Route as RegisterRoute } from './auth/register';
+import { Route as BookmarksRoute } from './bookmarks';
 
 export const routeTree = rootRoute.addChildren([
   FeedRoute,
@@ -118,6 +115,7 @@ export const routeTree = rootRoute.addChildren([
   ProfileRoute,
   LoginRoute,
   RegisterRoute,
+  BookmarksRoute,
 ]);
 
 export { rootRoute as Route };
