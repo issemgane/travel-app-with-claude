@@ -26,7 +26,7 @@ public class TravelPostService {
         TravelPost post = TravelPost.builder()
                 .user(user)
                 .content(request.getContent())
-                .category(request.getCategory())
+                .category(request.getCategory() != null ? request.getCategory() : PostCategory.SPOT)
                 .costLevel(request.getCostLevel())
                 .bestSeason(request.getBestSeason())
                 .durationSuggested(request.getDurationSuggested())

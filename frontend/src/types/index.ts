@@ -73,7 +73,7 @@ export interface TravelPost {
 
 export interface CreatePostRequest {
   content: string;
-  category: PostCategory;
+  category?: PostCategory;
   latitude: number;
   longitude: number;
   placeName: string;

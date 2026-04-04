@@ -12,7 +12,6 @@ public class CreatePostRequest {
     @Size(max = 5000)
     private String content;
 
-    @NotNull(message = "Category is required")
     private PostCategory category;
 
     @NotNull(message = "Latitude is required")

@@ -99,7 +99,7 @@ function CreatePostPage() {
   // Step 1 state
   const [images, setImages] = useState<{ file: File; preview: string }[]>([]);
   const [content, setContent] = useState('');
-  const [category, setCategory] = useState<PostCategory>('SPOT');
+  const [category, setCategory] = useState<PostCategory | null>(null);
 
   // Step 2 state
   const [mapPosition, setMapPosition] = useState<[number, number] | null>(null);
@@ -164,7 +164,7 @@ function CreatePostPage() {
 
     const data: CreatePostRequest = {
       content: content || placeName,
-      category,
+      category: category ?? undefined,
       latitude: mapPosition[0],
       longitude: mapPosition[1],
       placeName,
@@ -222,12 +222,20 @@ function CreatePostPage() {
             )}
           </div>
 
-          {/* Category */}
+          {/* Story / Caption */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Your story</label>
+            <textarea value={content} onChange={e => setContent(e.target.value)} rows={3}
+              placeholder="What made this place special?"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none" />
+          </div>
+
+          {/* Category (optional) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Category <span className="text-gray-400 font-normal">(optional)</span></label>
             <div className="flex flex-wrap gap-2">
               {CATEGORIES.map(cat => (
-                <button key={cat.value} type="button" onClick={() => setCategory(cat.value)}
+                <button key={cat.value} type="button" onClick={() => setCategory(prev => prev === cat.value ? null : cat.value)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium border transition ${
                     category === cat.value
                       ? 'bg-wanderlust-primary text-white border-wanderlust-primary'
@@ -237,14 +245,6 @@ function CreatePostPage() {
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Story / Caption */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Your story</label>
-            <textarea value={content} onChange={e => setContent(e.target.value)} rows={3}
-              placeholder="What made this place special?"
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 resize-none" />
           </div>
 
           {/* Next button */}
