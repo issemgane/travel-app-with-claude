@@ -1,2 +1,1 @@
-// trigger deploy - see commit 4b67e51 for actual changes
-export {};
+// deploy trigger v2\nexport {};\n
