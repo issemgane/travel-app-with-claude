@@ -66,12 +66,28 @@ class ApiClient {
     });
   }
 
+  checkFollow(userId: string) {
+    return this.request<{ following: boolean }>(`/users/${userId}/follow`);
+  }
+
   follow(userId: string) {
     return this.request<void>(`/users/${userId}/follow`, { method: 'POST' });
   }
 
   unfollow(userId: string) {
     return this.request<void>(`/users/${userId}/follow`, { method: 'DELETE' });
+  }
+
+  getFollowers(userId: string, page = 0) {
+    return this.request<import('@/types').PagedResponse<import('@/types').User>>(
+      `/users/${userId}/followers?page=${page}&size=20`
+    );
+  }
+
+  getFollowing(userId: string, page = 0) {
+    return this.request<import('@/types').PagedResponse<import('@/types').User>>(
+      `/users/${userId}/following?page=${page}&size=20`
+    );
   }
 
   // Posts

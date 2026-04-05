@@ -110,6 +110,8 @@ import { Route as ProfileRoute } from './profile/$userId';
 import { Route as LoginRoute } from './auth/login';
 import { Route as RegisterRoute } from './auth/register';
 import { Route as BookmarksRoute } from './bookmarks';
+import { Route as FollowersRoute } from './profile/$userId.followers';
+import { Route as FollowingRoute } from './profile/$userId.following';
 
 export const routeTree = rootRoute.addChildren([
   FeedRoute,
@@ -117,6 +119,8 @@ export const routeTree = rootRoute.addChildren([
   PostDetailRoute,
   CreatePostRoute,
   ProfileRoute,
+  FollowersRoute,
+  FollowingRoute,
   LoginRoute,
   RegisterRoute,
   BookmarksRoute,

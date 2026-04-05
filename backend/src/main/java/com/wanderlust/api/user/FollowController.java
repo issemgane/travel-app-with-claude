@@ -24,6 +24,13 @@ public class FollowController {
     private final FollowRepository followRepository;
     private final UserRepository userRepository;
 
+    @GetMapping("/{id}/follow")
+    @Operation(summary = "Check if current user follows a user")
+    public ResponseEntity<FollowStatusDto> checkFollow(@AuthenticationPrincipal UUID currentUserId, @PathVariable UUID id) {
+        boolean following = followRepository.existsById(new FollowId(currentUserId, id));
+        return ResponseEntity.ok(new FollowStatusDto(following));
+    }
+
     @PostMapping("/{id}/follow")
     @Operation(summary = "Follow a user")
     public ResponseEntity<Void> follow(@AuthenticationPrincipal UUID currentUserId, @PathVariable UUID id) {
