@@ -1,5 +1,5 @@
 import { createRoute, Link } from '@tanstack/react-router';
-import { Route as rootRoute } from '../../__root';
+import { Route as rootRoute } from '../__root';
 import { useFollowers, useFollowStatus, useFollow, useUnfollow } from '@/hooks/useProfile';
 import { useAuth } from '@/lib/auth';
 import { ArrowLeft, UserPlus, UserCheck, Loader2 } from 'lucide-react';
