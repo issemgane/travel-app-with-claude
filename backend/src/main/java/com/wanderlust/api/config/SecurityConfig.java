@@ -42,6 +42,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/itineraries/**").permitAll()
                 // Static frontend files
                 .requestMatchers("/", "/index.html", "/assets/**", "/*.js", "/*.css", "/*.ico", "/*.svg").permitAll()
+                // SPA routes - forwarded to index.html
+                .requestMatchers("/feed", "/explore/**", "/post/**", "/profile/**", "/itinerary/**", "/bookmarks", "/auth/**").permitAll()
                 // All others need auth
                 .anyRequest().authenticated()
             )
