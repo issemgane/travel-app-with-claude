@@ -3,24 +3,32 @@ import { Heart, MessageCircle, Bookmark, MapPin } from 'lucide-react';
 import type { TravelPost } from '@/types';
 import { CategoryBadge } from '@/components/post/CategoryBadge';
 import { useToggleLike } from '@/hooks/useInteractions';
-import { useToggleBookmark, useBookmarkIds } from '@/hooks/useBookmarks';
+import { useToggleBookmark } from '@/hooks/useBookmarks';
 import { useAuth } from '@/lib/auth';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface FeedCardProps {
   post: TravelPost;
 }
 
 export function FeedCard({ post }: FeedCardProps) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, token } = useAuth();
   const navigate = useNavigate();
   const toggleLike = useToggleLike(post.id);
   const toggleBookmark = useToggleBookmark();
-  const { data: bookmarkIds } = useBookmarkIds(isAuthenticated);
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likesCount);
-  const [localBookmarked, setLocalBookmarked] = useState<boolean | null>(null);
-  const bookmarked = localBookmarked ?? (bookmarkIds?.includes(post.id) ?? false);
+  const [bookmarked, setBookmarked] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+    fetch('/api/bookmarks/ids', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : [])
+      .then((ids: string[]) => setBookmarked(ids.includes(post.id)))
+      .catch(() => {});
+  }, [token, post.id]);
 
   const requireAuth = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -45,9 +53,9 @@ export function FeedCard({ post }: FeedCardProps) {
     e.stopPropagation();
     if (!isAuthenticated) return;
     const newBookmarked = !bookmarked;
-    setLocalBookmarked(newBookmarked);
+    setBookmarked(newBookmarked);
     toggleBookmark.mutate({ postId: post.id, isBookmarked: !newBookmarked }, {
-      onError: () => setLocalBookmarked(!newBookmarked),
+      onError: () => setBookmarked(!newBookmarked),
     });
   };
 
@@ -119,8 +127,7 @@ export function FeedCard({ post }: FeedCardProps) {
           <button onClick={handleBookmark} className="transition">
             <Bookmark
               size={20}
-              fill={bookmarked ? '#f59e0b' : 'none'}
-              color={bookmarked ? '#f59e0b' : '#4b5563'}
+              style={{ fill: bookmarked ? '#f59e0b' : 'none', color: bookmarked ? '#f59e0b' : '#6b7280' }}
             />
           </button>
         )}

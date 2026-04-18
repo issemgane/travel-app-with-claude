@@ -2,10 +2,10 @@ import { createRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Route as rootRoute } from '../__root';
 import { usePost } from '@/hooks/usePosts';
 import { useComments, useAddComment, useQuestions, useToggleLike } from '@/hooks/useInteractions';
-import { useToggleBookmark, useBookmarkIds } from '@/hooks/useBookmarks';
+import { useToggleBookmark } from '@/hooks/useBookmarks';
 import { CategoryBadge } from '@/components/post/CategoryBadge';
 import { Heart, MessageCircle, Bookmark, MapPin, Send, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 
 export const Route = createRoute({
@@ -58,14 +58,22 @@ function PostDetailPage() {
   const addComment = useAddComment(postId);
   const toggleLike = useToggleLike(postId);
   const toggleBookmark = useToggleBookmark();
-  const { isAuthenticated } = useAuth();
-  const { data: bookmarkIds } = useBookmarkIds(isAuthenticated);
+  const { isAuthenticated, token } = useAuth();
   const [commentText, setCommentText] = useState('');
   const [activeTab, setActiveTab] = useState<'comments' | 'qa'>('comments');
   const [liked, setLiked] = useState(false);
   const [localLikesCount, setLocalLikesCount] = useState<number | null>(null);
-  const [localBookmarked, setLocalBookmarked] = useState<boolean | null>(null);
-  const bookmarked = localBookmarked ?? (bookmarkIds?.includes(postId) ?? false);
+  const [bookmarked, setBookmarked] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+    fetch('/api/bookmarks/ids', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : [])
+      .then((ids: string[]) => setBookmarked(ids.includes(postId)))
+      .catch(() => {});
+  }, [token, postId]);
 
   if (isLoading || !post) {
     return (
@@ -96,9 +104,9 @@ function PostDetailPage() {
   const handleBookmark = () => {
     if (!isAuthenticated) { requireAuth(); return; }
     const newBookmarked = !bookmarked;
-    setLocalBookmarked(newBookmarked);
+    setBookmarked(newBookmarked);
     toggleBookmark.mutate({ postId: post.id, isBookmarked: !newBookmarked }, {
-      onError: () => setLocalBookmarked(!newBookmarked),
+      onError: () => setBookmarked(!newBookmarked),
     });
   };
 
@@ -164,8 +172,7 @@ function PostDetailPage() {
           <button onClick={handleBookmark} className="ml-auto transition">
             <Bookmark
               size={22}
-              fill={bookmarked ? '#f59e0b' : 'none'}
-              color={bookmarked ? '#f59e0b' : '#4b5563'}
+              style={{ fill: bookmarked ? '#f59e0b' : 'none', color: bookmarked ? '#f59e0b' : '#6b7280' }}
             />
           </button>
         )}
