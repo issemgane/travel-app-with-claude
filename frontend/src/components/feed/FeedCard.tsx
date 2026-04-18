@@ -3,9 +3,9 @@ import { Heart, MessageCircle, Bookmark, MapPin } from 'lucide-react';
 import type { TravelPost } from '@/types';
 import { CategoryBadge } from '@/components/post/CategoryBadge';
 import { useToggleLike } from '@/hooks/useInteractions';
-import { useToggleBookmark } from '@/hooks/useBookmarks';
+import { useToggleBookmark, useBookmarkStatus } from '@/hooks/useBookmarks';
 import { useAuth } from '@/lib/auth';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface FeedCardProps {
   post: TravelPost;
@@ -16,9 +16,14 @@ export function FeedCard({ post }: FeedCardProps) {
   const navigate = useNavigate();
   const toggleLike = useToggleLike(post.id);
   const toggleBookmark = useToggleBookmark();
+  const { data: bookmarkStatus } = useBookmarkStatus(post.id, isAuthenticated);
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likesCount);
   const [bookmarked, setBookmarked] = useState(false);
+
+  useEffect(() => {
+    if (bookmarkStatus) setBookmarked(bookmarkStatus.bookmarked);
+  }, [bookmarkStatus]);
 
   const requireAuth = (e: React.MouseEvent) => {
     e.preventDefault();

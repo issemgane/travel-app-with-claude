@@ -48,4 +48,12 @@ public class BookmarkController {
         var posts = postIds.map(postService::getById);
         return ResponseEntity.ok(PagedResponse.from(posts));
     }
+
+    @GetMapping("/{postId}/status")
+    @Operation(summary = "Check if current user has bookmarked a post")
+    public ResponseEntity<BookmarkStatusDto> checkBookmark(
+            @AuthenticationPrincipal UUID userId, @PathVariable UUID postId) {
+        boolean bookmarked = bookmarkRepository.existsById(new BookmarkId(userId, postId));
+        return ResponseEntity.ok(new BookmarkStatusDto(bookmarked));
+    }
 }

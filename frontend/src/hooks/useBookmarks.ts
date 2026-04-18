@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
 export function useBookmarks() {
@@ -7,6 +7,15 @@ export function useBookmarks() {
     queryFn: ({ pageParam = 0 }) => api.getBookmarks(pageParam),
     getNextPageParam: (lastPage) => (lastPage.last ? undefined : lastPage.page + 1),
     initialPageParam: 0,
+  });
+}
+
+export function useBookmarkStatus(postId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['bookmark-status', postId],
+    queryFn: () => api.checkBookmark(postId),
+    enabled,
+    staleTime: 30_000,
   });
 }
 
@@ -20,8 +29,9 @@ export function useToggleBookmark() {
         await api.bookmark(postId);
       }
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['bookmarks'] });
+      queryClient.invalidateQueries({ queryKey: ['bookmark-status', variables.postId] });
     },
   });
 }

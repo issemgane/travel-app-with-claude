@@ -207,6 +207,10 @@ class ApiClient {
     );
   }
 
+  checkBookmark(postId: string) {
+    return this.request<{ bookmarked: boolean }>(`/bookmarks/${postId}/status`);
+  }
+
 }
 
 export const api = new ApiClient();
