@@ -60,8 +60,7 @@ public interface TravelPostRepository extends JpaRepository<TravelPost, UUID> {
 
     @Query(value = """
             SELECT tp.* FROM travel_posts tp
-            WHERE tp.created_at > NOW() - INTERVAL '7 days'
-            ORDER BY tp.likes_count DESC
+            ORDER BY (tp.likes_count * 2 + tp.comments_count) DESC, tp.created_at DESC
             """, nativeQuery = true)
     Page<TravelPost> findTrending(Pageable pageable);
 

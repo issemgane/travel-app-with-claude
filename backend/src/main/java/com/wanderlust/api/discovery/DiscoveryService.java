@@ -23,7 +23,6 @@ public class DiscoveryService {
     }
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "trending")
     public Page<PostDto> getTrending(Pageable pageable) {
         return postRepository.findTrending(pageable).map(PostDto::from);
     }
