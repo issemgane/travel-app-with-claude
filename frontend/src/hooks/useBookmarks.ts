@@ -10,12 +10,11 @@ export function useBookmarks() {
   });
 }
 
-export function useBookmarkStatus(postId: string, enabled: boolean) {
+export function useBookmarkIds(enabled: boolean) {
   return useQuery({
-    queryKey: ['bookmark-status', postId],
-    queryFn: () => api.checkBookmark(postId),
+    queryKey: ['bookmark-ids'],
+    queryFn: () => api.getBookmarkIds(),
     enabled,
-    staleTime: 30_000,
   });
 }
 
@@ -29,9 +28,9 @@ export function useToggleBookmark() {
         await api.bookmark(postId);
       }
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bookmarks'] });
-      queryClient.invalidateQueries({ queryKey: ['bookmark-status', variables.postId] });
+      queryClient.invalidateQueries({ queryKey: ['bookmark-ids'] });
     },
   });
 }

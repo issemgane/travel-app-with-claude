@@ -207,8 +207,8 @@ class ApiClient {
     );
   }
 
-  checkBookmark(postId: string) {
-    return this.request<{ bookmarked: boolean }>(`/bookmarks/${postId}/status`);
+  getBookmarkIds() {
+    return this.request<string[]>('/bookmarks/ids');
   }
 
 }

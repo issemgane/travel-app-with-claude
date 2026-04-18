@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -49,11 +50,9 @@ public class BookmarkController {
         return ResponseEntity.ok(PagedResponse.from(posts));
     }
 
-    @GetMapping("/{postId}/status")
-    @Operation(summary = "Check if current user has bookmarked a post")
-    public ResponseEntity<BookmarkStatusDto> checkBookmark(
-            @AuthenticationPrincipal UUID userId, @PathVariable UUID postId) {
-        boolean bookmarked = bookmarkRepository.existsById(new BookmarkId(userId, postId));
-        return ResponseEntity.ok(new BookmarkStatusDto(bookmarked));
+    @GetMapping("/ids")
+    @Operation(summary = "Get all bookmarked post IDs for current user")
+    public ResponseEntity<List<UUID>> getBookmarkIds(@AuthenticationPrincipal UUID userId) {
+        return ResponseEntity.ok(bookmarkRepository.findAllPostIdsByUserId(userId));
     }
 }

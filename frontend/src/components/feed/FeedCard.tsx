@@ -3,9 +3,9 @@ import { Heart, MessageCircle, Bookmark, MapPin } from 'lucide-react';
 import type { TravelPost } from '@/types';
 import { CategoryBadge } from '@/components/post/CategoryBadge';
 import { useToggleLike } from '@/hooks/useInteractions';
-import { useToggleBookmark, useBookmarkStatus } from '@/hooks/useBookmarks';
+import { useToggleBookmark, useBookmarkIds } from '@/hooks/useBookmarks';
 import { useAuth } from '@/lib/auth';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface FeedCardProps {
   post: TravelPost;
@@ -16,14 +16,11 @@ export function FeedCard({ post }: FeedCardProps) {
   const navigate = useNavigate();
   const toggleLike = useToggleLike(post.id);
   const toggleBookmark = useToggleBookmark();
-  const { data: bookmarkStatus } = useBookmarkStatus(post.id, isAuthenticated);
+  const { data: bookmarkIds } = useBookmarkIds(isAuthenticated);
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likesCount);
-  const [bookmarked, setBookmarked] = useState(false);
-
-  useEffect(() => {
-    if (bookmarkStatus) setBookmarked(bookmarkStatus.bookmarked);
-  }, [bookmarkStatus]);
+  const [localBookmarked, setLocalBookmarked] = useState<boolean | null>(null);
+  const bookmarked = localBookmarked ?? (bookmarkIds?.includes(post.id) ?? false);
 
   const requireAuth = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -48,9 +45,9 @@ export function FeedCard({ post }: FeedCardProps) {
     e.stopPropagation();
     if (!isAuthenticated) return;
     const newBookmarked = !bookmarked;
-    setBookmarked(newBookmarked);
+    setLocalBookmarked(newBookmarked);
     toggleBookmark.mutate({ postId: post.id, isBookmarked: !newBookmarked }, {
-      onError: () => setBookmarked(!newBookmarked),
+      onError: () => setLocalBookmarked(!newBookmarked),
     });
   };
 

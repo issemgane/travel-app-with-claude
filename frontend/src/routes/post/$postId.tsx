@@ -2,10 +2,10 @@ import { createRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Route as rootRoute } from '../__root';
 import { usePost } from '@/hooks/usePosts';
 import { useComments, useAddComment, useQuestions, useToggleLike } from '@/hooks/useInteractions';
-import { useToggleBookmark, useBookmarkStatus } from '@/hooks/useBookmarks';
+import { useToggleBookmark, useBookmarkIds } from '@/hooks/useBookmarks';
 import { CategoryBadge } from '@/components/post/CategoryBadge';
 import { Heart, MessageCircle, Bookmark, MapPin, Send, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
 
 export const Route = createRoute({
@@ -59,16 +59,13 @@ function PostDetailPage() {
   const toggleLike = useToggleLike(postId);
   const toggleBookmark = useToggleBookmark();
   const { isAuthenticated } = useAuth();
-  const { data: bookmarkStatus } = useBookmarkStatus(postId, isAuthenticated);
+  const { data: bookmarkIds } = useBookmarkIds(isAuthenticated);
   const [commentText, setCommentText] = useState('');
   const [activeTab, setActiveTab] = useState<'comments' | 'qa'>('comments');
   const [liked, setLiked] = useState(false);
   const [localLikesCount, setLocalLikesCount] = useState<number | null>(null);
-  const [bookmarked, setBookmarked] = useState(false);
-
-  useEffect(() => {
-    if (bookmarkStatus) setBookmarked(bookmarkStatus.bookmarked);
-  }, [bookmarkStatus]);
+  const [localBookmarked, setLocalBookmarked] = useState<boolean | null>(null);
+  const bookmarked = localBookmarked ?? (bookmarkIds?.includes(postId) ?? false);
 
   if (isLoading || !post) {
     return (
@@ -99,9 +96,9 @@ function PostDetailPage() {
   const handleBookmark = () => {
     if (!isAuthenticated) { requireAuth(); return; }
     const newBookmarked = !bookmarked;
-    setBookmarked(newBookmarked);
+    setLocalBookmarked(newBookmarked);
     toggleBookmark.mutate({ postId: post.id, isBookmarked: !newBookmarked }, {
-      onError: () => setBookmarked(!newBookmarked),
+      onError: () => setLocalBookmarked(!newBookmarked),
     });
   };
 
