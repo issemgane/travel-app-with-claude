@@ -165,8 +165,8 @@ function PostDetailPage() {
         </span>
         {isAuthenticated && (
           <button onClick={handleBookmark}
-            className={`ml-auto transition ${bookmarked ? 'text-wanderlust-secondary' : 'text-gray-600 hover:text-wanderlust-secondary'}`}>
-            <Bookmark size={20} className={bookmarked ? 'fill-wanderlust-secondary' : ''} />
+            className={`ml-auto transition ${bookmarked ? 'text-amber-500' : 'text-gray-600 hover:text-amber-500'}`}>
+            <Bookmark size={20} className={bookmarked ? 'fill-amber-500' : ''} />
           </button>
         )}
       </div>
