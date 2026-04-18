@@ -2,6 +2,11 @@ spring:
   application:
     name: wanderlust-api
 
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/wanderlust}
     username: ${DATABASE_USERNAME:wanderlust}
@@ -22,6 +27,9 @@ server:
   port: ${PORT:8080}
   error:
     include-message: always
+  tomcat:
+    max-http-form-post-size: 50MB
+    max-swallow-size: 50MB
 
 wanderlust:
   jwt:

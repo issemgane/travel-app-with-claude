@@ -1,5 +1,5 @@
-import { Link } from '@tanstack/react-router';
-import { Heart, MessageCircle, Bookmark, MapPin, Clock, DollarSign } from 'lucide-react';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { Heart, MessageCircle, Bookmark, MapPin } from 'lucide-react';
 import type { TravelPost } from '@/types';
 import { CategoryBadge } from '@/components/post/CategoryBadge';
 import { useToggleLike } from '@/hooks/useInteractions';
@@ -13,16 +13,23 @@ interface FeedCardProps {
 
 export function FeedCard({ post }: FeedCardProps) {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const toggleLike = useToggleLike(post.id);
   const toggleBookmark = useToggleBookmark();
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likesCount);
   const [bookmarked, setBookmarked] = useState(false);
 
+  const requireAuth = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigate({ to: '/auth/login', search: { redirect: `/post/${post.id}` } });
+  };
+
   const handleLike = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isAuthenticated) return;
+    if (!isAuthenticated) { requireAuth(e); return; }
     const newLiked = !liked;
     setLiked(newLiked);
     setLikesCount(prev => newLiked ? prev + 1 : prev - 1);
@@ -106,10 +113,12 @@ export function FeedCard({ post }: FeedCardProps) {
             <span className="text-sm">{post.commentsCount}</span>
           </Link>
         </div>
-        <button onClick={handleBookmark}
-          className={`transition ${bookmarked ? 'text-wanderlust-secondary' : 'text-gray-600 hover:text-wanderlust-secondary'}`}>
-          <Bookmark size={20} className={bookmarked ? 'fill-wanderlust-secondary' : ''} />
-        </button>
+        {isAuthenticated && (
+          <button onClick={handleBookmark}
+            className={`transition ${bookmarked ? 'text-wanderlust-secondary' : 'text-gray-600 hover:text-wanderlust-secondary'}`}>
+            <Bookmark size={20} className={bookmarked ? 'fill-wanderlust-secondary' : ''} />
+          </button>
+        )}
       </div>
     </article>
   );

@@ -3,12 +3,11 @@ import { Route as rootRoute } from '../__root';
 import { useCreatePost } from '@/hooks/usePosts';
 import { useState, useRef, useEffect } from 'react';
 import type { PostCategory, CreatePostRequest } from '@/types';
-import { MapPin, X, Camera, ArrowRight, ArrowLeft, ImagePlus, Hash } from 'lucide-react';
+import { MapPin, X, Camera, ArrowRight, ArrowLeft, ImagePlus, Hash, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Fix leaflet default marker icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
@@ -59,7 +58,6 @@ const COUNTRIES = [
   { code: 'PF', name: 'French Polynesia' },
 ];
 
-// Approximate center coordinates for countries
 const COUNTRY_COORDS: Record<string, [number, number]> = {
   AF: [33.93, 67.71], AL: [41.15, 20.17], DZ: [28.03, 1.66], AR: [-38.42, -63.62],
   AU: [-25.27, 133.78], AT: [47.52, 14.55], BE: [50.50, 4.47], BR: [-14.24, -51.93],
@@ -106,12 +104,7 @@ function MapPicker({ position, onPositionChange, center, zoom }: {
   }
 
   return (
-    <MapContainer
-      center={center}
-      zoom={zoom}
-      className="h-full w-full rounded-xl"
-      style={{ minHeight: '250px' }}
-    >
+    <MapContainer center={center} zoom={zoom} className="h-full w-full rounded-xl" style={{ minHeight: '250px' }}>
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -123,10 +116,56 @@ function MapPicker({ position, onPositionChange, center, zoom }: {
   );
 }
 
+function PublishOverlay({ status, error, onRetry, onDismiss }: {
+  status: 'publishing' | 'success' | 'error';
+  error?: string;
+  onRetry: () => void;
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center px-4">
+      <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-xl">
+        {status === 'publishing' && (
+          <>
+            <Loader2 size={48} className="animate-spin text-wanderlust-primary mx-auto mb-4" />
+            <h2 className="text-lg font-bold mb-1">Publishing your post...</h2>
+            <p className="text-sm text-gray-500">Uploading photos and creating your story</p>
+          </>
+        )}
+        {status === 'success' && (
+          <>
+            <CheckCircle size={48} className="text-green-500 mx-auto mb-4" />
+            <h2 className="text-lg font-bold mb-1">Published!</h2>
+            <p className="text-sm text-gray-500">Your travel story is now live</p>
+          </>
+        )}
+        {status === 'error' && (
+          <>
+            <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+            <h2 className="text-lg font-bold mb-1">Publishing failed</h2>
+            <p className="text-sm text-gray-500 mb-4">{error || 'Something went wrong. Please try again.'}</p>
+            <div className="flex gap-3">
+              <button onClick={onDismiss}
+                className="flex-1 border border-gray-200 py-2.5 rounded-xl text-sm font-medium hover:bg-gray-50">
+                Cancel
+              </button>
+              <button onClick={onRetry}
+                className="flex-1 bg-wanderlust-primary text-white py-2.5 rounded-xl text-sm font-medium hover:bg-brand-800">
+                Retry
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function CreatePostPage() {
   const navigate = useNavigate();
   const createPost = useCreatePost();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const geocodeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [step, setStep] = useState(1);
 
@@ -137,11 +176,17 @@ function CreatePostPage() {
 
   // Step 2 state
   const [mapPosition, setMapPosition] = useState<[number, number] | null>(null);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([30, 10]);
+  const [mapZoom, setMapZoom] = useState(2);
   const [countrySearch, setCountrySearch] = useState('');
   const [countryCode, setCountryCode] = useState('');
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [cityName, setCityName] = useState('');
   const [tags, setTags] = useState('');
+
+  // Publish state
+  const [publishStatus, setPublishStatus] = useState<'idle' | 'publishing' | 'success' | 'error'>('idle');
+  const [publishError, setPublishError] = useState('');
 
   const filteredCountries = countrySearch.length > 0
     ? COUNTRIES.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase())).slice(0, 8)
@@ -176,44 +221,102 @@ function CreatePostPage() {
     setCountryCode(code);
     setCountrySearch(name);
     setShowCountryDropdown(false);
+    const coords = COUNTRY_COORDS[code];
+    if (coords) {
+      setMapCenter(coords);
+      setMapZoom(6);
+    }
+  };
+
+  const handleCityChange = (value: string) => {
+    setCityName(value);
+    if (geocodeTimerRef.current) clearTimeout(geocodeTimerRef.current);
+    if (value.trim().length >= 3 && countryCode) {
+      geocodeTimerRef.current = setTimeout(() => {
+        const countryName = COUNTRIES.find(c => c.code === countryCode)?.name || '';
+        const query = encodeURIComponent(`${value.trim()}, ${countryName}`);
+        fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`)
+          .then(r => r.json())
+          .then(results => {
+            if (results.length > 0) {
+              const lat = parseFloat(results[0].lat);
+              const lon = parseFloat(results[0].lon);
+              setMapCenter([lat, lon]);
+              setMapZoom(12);
+              if (!mapPosition) {
+                setMapPosition([lat, lon]);
+              }
+            }
+          })
+          .catch(() => {});
+      }, 600);
+    }
+  };
+
+  const handleMapClick = (lat: number, lng: number) => {
+    setMapPosition([lat, lng]);
+    setMapCenter([lat, lng]);
+    setMapZoom(12);
   };
 
   const handleSubmit = async () => {
     if (!mapPosition || !countryCode || !cityName.trim()) return;
 
-    // For now, use object URLs as media URLs
-    // In production you'd upload to S3/Cloudinary first
-    const mediaUrls: string[] = [];
-    for (const img of images) {
-      // Convert to base64 data URL for the API
-      const reader = new FileReader();
-      const dataUrl = await new Promise<string>((resolve) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(img.file);
+    setPublishStatus('publishing');
+    setPublishError('');
+
+    try {
+      const mediaUrls: string[] = [];
+      for (const img of images) {
+        const reader = new FileReader();
+        const dataUrl = await new Promise<string>((resolve) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(img.file);
+        });
+        mediaUrls.push(dataUrl);
+      }
+
+      const placeName = cityName.trim();
+
+      const data: CreatePostRequest = {
+        content: content || placeName,
+        category: category ?? undefined,
+        latitude: mapPosition[0],
+        longitude: mapPosition[1],
+        placeName,
+        countryCode: countryCode.toUpperCase(),
+        tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
+        mediaItems: mediaUrls.map(url => ({ mediaUrl: url })),
+      };
+
+      createPost.mutate(data, {
+        onSuccess: (post) => {
+          setPublishStatus('success');
+          setTimeout(() => navigate({ to: `/post/${post.id}` }), 1200);
+        },
+        onError: (err: any) => {
+          setPublishStatus('error');
+          setPublishError(err.message || 'Failed to publish. Please try again.');
+        },
       });
-      mediaUrls.push(dataUrl);
+    } catch (err: any) {
+      setPublishStatus('error');
+      setPublishError(err.message || 'Failed to prepare images.');
     }
-
-    const placeName = cityName.trim();
-
-    const data: CreatePostRequest = {
-      content: content || placeName,
-      category: category ?? undefined,
-      latitude: mapPosition[0],
-      longitude: mapPosition[1],
-      placeName,
-      countryCode: countryCode.toUpperCase(),
-      tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
-      mediaItems: mediaUrls.map(url => ({ mediaUrl: url })),
-    };
-
-    createPost.mutate(data, {
-      onSuccess: (post) => navigate({ to: `/post/${post.id}` }),
-    });
   };
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 pb-24">
+      {/* Publish overlay */}
+      {publishStatus !== 'idle' && (
+        <PublishOverlay
+          status={publishStatus as 'publishing' | 'success' | 'error'}
+          error={publishError}
+          onRetry={() => { setPublishStatus('idle'); handleSubmit(); }}
+          onDismiss={() => setPublishStatus('idle')}
+        />
+      )}
+
       {/* Progress indicator */}
       <div className="flex items-center gap-3 mb-6">
         <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${step >= 1 ? 'bg-wanderlust-primary text-white' : 'bg-gray-200 text-gray-500'}`}>1</div>
@@ -230,8 +333,6 @@ function CreatePostPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <Camera size={14} className="inline mr-1" /> Photos *
             </label>
-
-            {/* Image grid */}
             <div className="grid grid-cols-3 gap-2 mb-2">
               {images.map((img, i) => (
                 <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100">
@@ -323,12 +424,12 @@ function CreatePostPage() {
           {/* City / Village */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">City / Place name *</label>
-            <input type="text" value={cityName} onChange={e => setCityName(e.target.value)}
+            <input type="text" value={cityName} onChange={e => handleCityChange(e.target.value)}
               placeholder="e.g., Santorini, Kyoto, Machu Picchu"
               className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300" />
           </div>
 
-          {/* Map - centers based on country/city selection */}
+          {/* Map */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <MapPin size={14} className="inline mr-1" /> Pinpoint the exact location *
@@ -336,9 +437,9 @@ function CreatePostPage() {
             <div className="h-64 rounded-xl overflow-hidden border border-gray-200">
               <MapPicker
                 position={mapPosition}
-                onPositionChange={(lat, lng) => setMapPosition([lat, lng])}
-                center={mapPosition ?? (countryCode && COUNTRY_COORDS[countryCode] ? COUNTRY_COORDS[countryCode] : [30, 10])}
-                zoom={mapPosition ? 12 : countryCode ? 6 : 2}
+                onPositionChange={handleMapClick}
+                center={mapCenter}
+                zoom={mapZoom}
               />
             </div>
             {mapPosition && (
@@ -365,7 +466,7 @@ function CreatePostPage() {
           <button type="button" onClick={handleSubmit}
             disabled={!canSubmit || createPost.isPending}
             className="w-full bg-wanderlust-primary text-white py-3 rounded-xl font-medium hover:bg-brand-800 disabled:opacity-40 disabled:cursor-not-allowed">
-            {createPost.isPending ? 'Publishing...' : 'Publish'}
+            Publish
           </button>
         </div>
       )}

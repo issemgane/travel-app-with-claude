@@ -1,4 +1,4 @@
-import { createRoute, useNavigate, Link } from '@tanstack/react-router';
+import { createRoute, useNavigate, Link, useSearch } from '@tanstack/react-router';
 import { Route as rootRoute } from '../__root';
 import { useAuth } from '@/lib/auth';
 import { useState } from 'react';
@@ -6,12 +6,16 @@ import { useState } from 'react';
 export const Route = createRoute({
   getParentRoute: () => rootRoute,
   path: '/auth/login',
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: (search.redirect as string) || undefined,
+  }),
   component: LoginPage,
 });
 
 function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -23,7 +27,7 @@ function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      navigate({ to: '/' });
+      navigate({ to: redirect || '/' });
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {
