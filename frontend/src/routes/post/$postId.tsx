@@ -164,9 +164,12 @@ function PostDetailPage() {
           <MessageCircle size={20} /> {post.commentsCount} comments
         </span>
         {isAuthenticated && (
-          <button onClick={handleBookmark}
-            className={`ml-auto transition ${bookmarked ? 'text-amber-500' : 'text-gray-600 hover:text-amber-500'}`}>
-            <Bookmark size={20} className={bookmarked ? 'fill-amber-500' : ''} />
+          <button onClick={handleBookmark} className="ml-auto transition">
+            <Bookmark
+              size={22}
+              fill={bookmarked ? '#f59e0b' : 'none'}
+              color={bookmarked ? '#f59e0b' : '#4b5563'}
+            />
           </button>
         )}
       </div>
