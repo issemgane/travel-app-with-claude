@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Heart, MessageCircle, Bookmark, MapPin } from 'lucide-react';
+import { Heart, MessageCircle, MapPin } from 'lucide-react';
 import type { TravelPost } from '@/types';
 import { CategoryBadge } from '@/components/post/CategoryBadge';
 import { useToggleLike } from '@/hooks/useInteractions';
@@ -125,10 +125,12 @@ export function FeedCard({ post }: FeedCardProps) {
         </div>
         {isAuthenticated && (
           <button onClick={handleBookmark} className="transition">
-            <Bookmark
-              size={20}
-              style={{ fill: bookmarked ? '#f59e0b' : 'none', color: bookmarked ? '#f59e0b' : '#6b7280' }}
-            />
+            <svg width="20" height="20" viewBox="0 0 24 24"
+              fill={bookmarked ? '#f59e0b' : 'none'}
+              stroke={bookmarked ? '#f59e0b' : '#6b7280'}
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+            </svg>
           </button>
         )}
       </div>

@@ -4,7 +4,7 @@ import { usePost } from '@/hooks/usePosts';
 import { useComments, useAddComment, useQuestions, useToggleLike } from '@/hooks/useInteractions';
 import { useToggleBookmark } from '@/hooks/useBookmarks';
 import { CategoryBadge } from '@/components/post/CategoryBadge';
-import { Heart, MessageCircle, Bookmark, MapPin, Send, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, MessageCircle, MapPin, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 
@@ -169,11 +169,16 @@ function PostDetailPage() {
           <MessageCircle size={20} /> {post.commentsCount} comments
         </span>
         {isAuthenticated && (
-          <button onClick={handleBookmark} className="ml-auto transition">
-            <Bookmark
-              size={22}
-              style={{ fill: bookmarked ? '#f59e0b' : 'none', color: bookmarked ? '#f59e0b' : '#6b7280' }}
-            />
+          <button onClick={handleBookmark} className="ml-auto flex items-center gap-1.5 transition">
+            <svg width="22" height="22" viewBox="0 0 24 24"
+              fill={bookmarked ? '#f59e0b' : 'none'}
+              stroke={bookmarked ? '#f59e0b' : '#6b7280'}
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+            </svg>
+            <span className={`text-sm font-medium ${bookmarked ? 'text-amber-500' : 'text-gray-500'}`}>
+              {bookmarked ? 'Saved' : 'Save'}
+            </span>
           </button>
         )}
       </div>
