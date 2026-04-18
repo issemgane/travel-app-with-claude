@@ -5,7 +5,7 @@ import { useComments, useAddComment, useQuestions, useToggleLike } from '@/hooks
 import { useToggleBookmark } from '@/hooks/useBookmarks';
 import { CategoryBadge } from '@/components/post/CategoryBadge';
 import { Heart, MessageCircle, MapPin, Send, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/auth';
 
 export const Route = createRoute({
@@ -64,6 +64,7 @@ function PostDetailPage() {
   const [liked, setLiked] = useState(false);
   const [localLikesCount, setLocalLikesCount] = useState<number | null>(null);
   const [bookmarked, setBookmarked] = useState(false);
+  const userClickedRef = useRef(false);
 
   useEffect(() => {
     if (!token) return;
@@ -71,7 +72,11 @@ function PostDetailPage() {
       headers: { 'Authorization': `Bearer ${token}` },
     })
       .then(r => r.ok ? r.json() : [])
-      .then((ids: string[]) => setBookmarked(ids.includes(postId)))
+      .then((ids: string[]) => {
+        if (!userClickedRef.current) {
+          setBookmarked(ids.includes(postId));
+        }
+      })
       .catch(() => {});
   }, [token, postId]);
 
@@ -103,6 +108,7 @@ function PostDetailPage() {
 
   const handleBookmark = () => {
     if (!isAuthenticated) { requireAuth(); return; }
+    userClickedRef.current = true;
     const newBookmarked = !bookmarked;
     setBookmarked(newBookmarked);
     toggleBookmark.mutate({ postId: post.id, isBookmarked: !newBookmarked }, {

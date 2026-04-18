@@ -5,7 +5,7 @@ import { CategoryBadge } from '@/components/post/CategoryBadge';
 import { useToggleLike } from '@/hooks/useInteractions';
 import { useToggleBookmark } from '@/hooks/useBookmarks';
 import { useAuth } from '@/lib/auth';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface FeedCardProps {
   post: TravelPost;
@@ -19,6 +19,7 @@ export function FeedCard({ post }: FeedCardProps) {
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likesCount);
   const [bookmarked, setBookmarked] = useState(false);
+  const userClickedRef = useRef(false);
 
   useEffect(() => {
     if (!token) return;
@@ -26,7 +27,11 @@ export function FeedCard({ post }: FeedCardProps) {
       headers: { 'Authorization': `Bearer ${token}` },
     })
       .then(r => r.ok ? r.json() : [])
-      .then((ids: string[]) => setBookmarked(ids.includes(post.id)))
+      .then((ids: string[]) => {
+        if (!userClickedRef.current) {
+          setBookmarked(ids.includes(post.id));
+        }
+      })
       .catch(() => {});
   }, [token, post.id]);
 
@@ -52,6 +57,7 @@ export function FeedCard({ post }: FeedCardProps) {
     e.preventDefault();
     e.stopPropagation();
     if (!isAuthenticated) return;
+    userClickedRef.current = true;
     const newBookmarked = !bookmarked;
     setBookmarked(newBookmarked);
     toggleBookmark.mutate({ postId: post.id, isBookmarked: !newBookmarked }, {
